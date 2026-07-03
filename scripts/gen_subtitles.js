@@ -77,31 +77,36 @@ function fmt(t){let ms=Math.round((t-Math.floor(t))*1000);let sec=Math.floor(t);
     const speechStart = words.length? Math.max(0, words[0].start-0.05):0;
     const speechEnd = words.length? Math.min(cd, words[words.length-1].end):cd;
     const span = Math.max(0.5, speechEnd-speechStart);
-    const nw = words.length;
     const ch = chunks(narration[i]);
-    const totalChars = ch.reduce((a,c)=>a+c.length,0)||1;
-    let cum=0;
-    // map char-fraction -> TIME-fraction of the speech span, then snap to the nearest
-    // real word boundary. (Mapping to word INDEX distorts timing when Whisper splits
-    // Latin words into per-letter entries or word durations vary.)
-    const timeAtFrac=(f)=>{
-      const target = speechStart + f*span;
-      if(!nw) return target;
-      let best = target, bd = Infinity;
-      for(const w of words){ const d = Math.abs(w.start - target); if(d < bd){ bd = d; best = w.start; } }
-      if(bd > 0.6) best = target; // no word boundary nearby — trust proportional time
-      return Math.min(Math.max(best, speechStart), speechEnd);
+    // Map narration char position -> TRANSCRIPT char position -> real timestamp.
+    // Narration and ASR transcript are ~1:1 in NON-SPACE character count (homophone
+    // errors substitute 1:1), so this stays anchored even where seconds-per-char
+    // varies wildly (e.g. Latin names: "Claude Code" is 11 chars but ~2 syllables —
+    // naive time-proportional mapping drifts seconds there). Chars inside a Whisper
+    // word are interpolated linearly across the word's [start,end].
+    const strip2=(s)=>s.replace(/\s+/g,'');
+    const totalChars = ch.reduce((a,c)=>a+strip2(c).length,0)||1;
+    const flat=[];
+    for(const w of words){
+      const t=strip2(w.word||''); const n2=t.length||1;
+      for(let j=0;j<t.length;j++) flat.push(w.start + (w.end-w.start)*(j/n2));
+    }
+    const timeAtChar=(k)=>{
+      if(!flat.length) return speechStart + (k/totalChars)*span;
+      const idx2=Math.min(flat.length-1, Math.max(0, Math.round(k*flat.length/totalChars)));
+      return Math.min(Math.max(flat[idx2], speechStart), speechEnd);
     };
+    let cum=0;
     for(let k=0;k<ch.length;k++){
       const c=ch[k];
-      const fa=cum/totalChars, fb=(cum+c.length)/totalChars; cum+=c.length;
-      let st=offset+ (nw? timeAtFrac(fa) : speechStart+fa*span);
-      let en=offset+ (nw? (k===ch.length-1? speechEnd : timeAtFrac(fb)) : speechStart+fb*span);
+      const a=cum, b=cum+strip2(c).length; cum+=strip2(c).length;
+      let st=offset+ timeAtChar(a);
+      let en=offset+ (k===ch.length-1? speechEnd : timeAtChar(b));
       if(en-st<0.6) en=st+0.6;
       srt+=`${idx++}\n${fmt(st)} --> ${fmt(en)}\n${c}\n\n`;
     }
     offset+=cd;
-    console.log(`slide ${String(i+1).padStart(2,'0')}: clip=${cd.toFixed(2)}s words=${nw} chunks=${ch.length}`);
+    console.log(`slide ${String(i+1).padStart(2,'0')}: clip=${cd.toFixed(2)}s words=${words.length} chunks=${ch.length}`);
   }
   fs.writeFileSync(path.join(DIR,'subtitles_aligned.srt'), '﻿'+srt, 'utf8');
   console.log(`\nSRT written. total video offset=${offset.toFixed(2)}s`);
