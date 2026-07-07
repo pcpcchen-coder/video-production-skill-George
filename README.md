@@ -64,7 +64,45 @@ cp ../video-production-skill/references/config-example.json config.json
 # 設好 ELEVENLABS_API_KEY / OPENAI_API_KEY(或放進專案的 .env)
 ```
 然後照 `SKILL.md` 的 checklist 走,或直接把上面那句 task prompt 丟給你的 agent。
-`examples/demo/` 有一個 3 張投影片的最小範例(narration + 投影片 prompt)可以參考格式。
+`examples/demo/`(Path A 手繪風)和 `examples/demo-html/`(Path B HTML 版型)各有一個 3 張投影片的最小範例,可以參考格式。
+
+## 三個使用範例
+
+同一套 skill、三種很不一樣的影片。重點在示範:**每一張投影片都是「一張圖」,不是把旁白貼成大字**——這是這套 skill 的圖文並茂法(見 `references/visual-design.md`)。你只要把「題目」丟給 agent,它會自己讀 skill、走完 pipeline。
+
+### 範例一:概念解說(Path A 手繪風,頻道預設)
+
+> 你開口:「做一支影片解釋『快取(cache)』是什麼,給完全不懂的人看。」
+
+- **走哪條路**:Path A —— gpt-image-2 生成白底手繪教授板書風,適合抽象概念。
+- **分鏡(agent 先規劃每張的「圖」)**:
+  | # | 這張畫什麼 | 版型/構圖 |
+  |---|---|---|
+  | 1 | 把常用的東西放手邊的生活場景 | 比喻場景(開場) |
+  | 2 | 資料從「遠倉庫」搬到「手邊小盒子」 | 流程圖 |
+  | 3 | 有快取 vs 沒快取,拿東西的速度 | 左右對比 |
+  | 4 | 命中率 90% 這個關鍵數字 | 放大數字 |
+  | 5 | 第一人稱心得 | 結尾 |
+- **圖文並茂關鍵**:`slides_prompts.json` 每一則都用 `visual-design.md` §7 的 prompt 樣板**指定構圖**(「中央畫一條流程…」),而不是只給標題加幾行字——否則 gpt-image-2 只會畫一張字卡。
+
+### 範例二:數據比較型(Path B HTML 版型庫,零圖像 API)
+
+> 你開口:「破解三個常見的睡眠迷思,用數據講清楚,不要太長。」
+
+- **走哪條路**:Path B —— 直接複製 `references/slide-templates/` 的現成 HTML 版型,不需要任何圖像 API(只要 Playwright)。
+- **分鏡**:開場(`layout-title`)→ 迷思 vs 事實(`layout-compare`)→ 各年齡建議睡眠時數(`layout-bars` 誠實長條圖)→「熬夜一晚 = 反應力像喝了幾杯」的關鍵數字(`layout-bignumber`)→ 三步驟改善(`layout-flow`)→ 結尾(`layout-end`)。
+- **圖文並茂關鍵**:旁白裡出現的每個數字與比較,**一律畫成長條圖或大數字**,不是用一句話念過去(呼應教學憲法 §8a 的誠實長條圖:比例真實、座標從 0、直接標值)。
+
+### 範例三:實測心得「我實際做了 X」(Path B + 真截圖)
+
+> 你開口:「我實際試三個免費的線上去背工具,做一支心得比較哪個好用。」
+
+- **走哪條路**:Path B —— 因為只有 HTML 能嵌**真實截圖**,Path A 生圖做不到(教學憲法 §3:實測型影片一定要放真畫面,不能用自己畫的示意圖)。
+- **流程**:先把三個工具的操作畫面抓下來存到 `screenshots/`,再用 `layout-screenshot` 版型嵌進去、疊紅框圈重點。
+- **分鏡**:開場(`layout-title`)→ 我怎麼測(`layout-flow`)→ 工具 A/B/C 各一張真截圖(`layout-screenshot`)→ 去背效果對比(`layout-compare`)→ 第一人稱心得 + AI 身份揭露(`layout-end`)。
+- **圖文並茂關鍵**:說服力來自**真畫面**,不是抽象文字;每張截圖都用紅框標出「該看哪裡」。
+
+> 這三支剛好沿不同軸線變化(手繪 vs HTML、概念 vs 數據 vs 實測、生圖 vs 版型 vs 真截圖),呼應教學憲法 §10「別讓每支影片都是同一支」。
 
 ## 誠實聲明
 
