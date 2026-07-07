@@ -21,8 +21,10 @@
   "slides": {
     "bgColor": "#1a1a2e",
     "accentColor": "#e94560",
-    "titleSize": 50,
-    "fontFamily": "'Microsoft JhengHei', 'Noto Sans TC', sans-serif"
+    "titleSize": 72,
+    "subtitleSize": 40,
+    "bodySize": 34,
+    "fontFamily": "'Microsoft JhengHei', 'Noto Sans TC', 'PingFang TC', 'WenQuanYi Zen Hei', sans-serif"
   },
   "branding": {
     "watermark": "🎬 Your Channel Name",

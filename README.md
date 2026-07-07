@@ -12,7 +12,7 @@
 
 - **[`SKILL.md`](SKILL.md)** — 給 agent 的主指令：完整 pipeline、強制 checklist、每一步的地雷
 - **[`scripts/`](scripts/)** — 9 個可直接執行的腳本（TTS+ASR 驗證、投影片生成、組裝、字幕對齊、封面…）
-- **[`references/`](references/)** — 教學風格憲法、旁白寫法、破音字地雷表、**40+ 支影片的血淚教訓**（[lessons-learned.md](references/lessons-learned.md)——最有價值的一份，每一條都是真的踩過）
+- **[`references/`](references/)** — 教學風格憲法、旁白寫法、**投影片視覺憲法**（[visual-design.md](references/visual-design.md)——每張投影片都要圖文並茂的硬規則 + gpt-image-2 構圖 prompt 樣板）、**現成 HTML 版型庫**（[slide-templates/](references/slide-templates/)——9 種可直接複製的圖文版型）、破音字地雷表、**40+ 支影片的血淚教訓**（[lessons-learned.md](references/lessons-learned.md)——最有價值的一份，每一條都是真的踩過）
 
 ## 它做出來的影片長什麼樣
 

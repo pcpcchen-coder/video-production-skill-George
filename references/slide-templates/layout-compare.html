@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<!-- ═══════════════════════════════════════════════════════════════
+ 版型 4／8：左右對比（compare / versus）
+ 用途：兩個東西的對照 — 前 vs 後、錯 vs 對、A 方法 vs B 方法、
+      失敗群 vs 成功群（呼應 teaching-style §4b 的對比結構）。
+ 替換：
+   1. 兩欄的 .col-title（各一個詞）
+   2. 每欄 .item 各 2–3 點（≤ 12 字）
+   3. 中間 .vs 圈可換成「→」表示「變成」，或保留 VS 表示對立
+   4. 想加顏色語意：左欄用 .cold（冷／舊／錯）、右欄用 .warm（暖／新／對）
+ 禁忌：每欄超過 3 點就是塞太多；兩欄點數盡量對稱
+═══════════════════════════════════════════════════════════════ -->
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    width: 1920px; height: 1080px;
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+    color: #ffffff;
+    font-family: 'Noto Sans TC', 'Microsoft JhengHei', 'PingFang TC', 'WenQuanYi Zen Hei', sans-serif;
+    display: flex; flex-direction: column; justify-content: center;
+    padding: 70px 80px 120px;
+    overflow: hidden; position: relative;
+  }
+  .headline { font-size: 60px; font-weight: 900; text-align: center; margin-bottom: 50px; }
+  .cols { display: flex; align-items: stretch; gap: 40px; position: relative; }
+  .col {
+    flex: 1; background: rgba(255,255,255,0.05); border-radius: 28px;
+    padding: 48px 44px; border-top: 10px solid #6a8caf;
+  }
+  .col.warm { border-top-color: #e94560; }
+  .col.cold { border-top-color: #4a90d9; }
+  .col-title { font-size: 52px; font-weight: 800; margin-bottom: 34px; }
+  .item { display: flex; gap: 18px; font-size: 40px; line-height: 1.45; margin-bottom: 26px; color: #e8ecf5; }
+  .item .mk { font-size: 40px; }
+  .vs {
+    position: absolute; left: 50%; top: 50%; transform: translate(-50%,-50%);
+    width: 110px; height: 110px; border-radius: 50%;
+    background: #16213e; border: 6px solid #ffffff;
+    display: flex; justify-content: center; align-items: center;
+    font-size: 44px; font-weight: 900;
+  }
+  .channel { position: absolute; bottom: 30px; left: 50px; font-size: 24px; opacity: 0.5; }
+  .slide-number { position: absolute; bottom: 30px; right: 50px; font-size: 24px; opacity: 0.5; }
+</style>
+</head>
+<body>
+  <div class="headline">聽得清楚 vs 聽不清楚</div>
+  <div class="cols">
+    <div class="col cold">
+      <div class="col-title">吵雜環境</div>
+      <div class="item"><span class="mk">🔊</span><span>背景一堆雜音</span></div>
+      <div class="item"><span class="mk">❓</span><span>字被蓋掉、猜錯</span></div>
+      <div class="item"><span class="mk">📉</span><span>準確率明顯下降</span></div>
+    </div>
+    <div class="col warm">
+      <div class="col-title">安靜環境</div>
+      <div class="item"><span class="mk">🎙️</span><span>聲音乾淨清楚</span></div>
+      <div class="item"><span class="mk">✅</span><span>每個字都聽得準</span></div>
+      <div class="item"><span class="mk">📈</span><span>準確率接近滿分</span></div>
+    </div>
+    <div class="vs">VS</div>
+  </div>
+  <div class="channel">🎬 Your Channel Name</div>
+  <div class="slide-number">5/10</div>
+</body>
+</html>

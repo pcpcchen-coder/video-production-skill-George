@@ -48,8 +48,12 @@ console.log('---');
     const pngPath = htmlPath.replace(/\.html$/i, '.png');
     
     const page = await ctx.newPage();
-    await page.goto('file:///' + htmlPath.replace(/\\/g, '/'));
-    await page.waitForTimeout(500);
+    // Wait for network (embedded <img> screenshots) AND webfonts to be ready before capturing —
+    // a fixed short delay can fire before images/CJK fonts load, which silently punishes exactly
+    // the image-rich slides we want (they'd screenshot with missing images or tofu fallback text).
+    await page.goto('file:///' + htmlPath.replace(/\\/g, '/'), { waitUntil: 'networkidle' });
+    await page.evaluate(() => document.fonts && document.fonts.ready).catch(() => {});
+    await page.waitForTimeout(200);
     await page.screenshot({ path: pngPath, fullPage: false });
     await page.close();
     

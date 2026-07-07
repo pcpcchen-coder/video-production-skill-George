@@ -44,6 +44,26 @@ const slideCount = slideFiles.length;
 
 if (slideCount === 0) { console.error('ERROR: No slide_XX.png files found in slides/'); process.exit(1); }
 
+// --- ⭐ Alignment gate (SKILL.md step 1.5): narration == slides == audio, or fail loudly ---
+// Without this, a slide/narration count mismatch silently drops trailing narration and later
+// crashes gen_subtitles.js with a raw ffprobe stack trace. Turn the skill's #1 failure mode
+// into a clear error here.
+const audioCount = fs.existsSync(AUDIO_DIR)
+  ? fs.readdirSync(AUDIO_DIR).filter(f => /^slide_\d+\.mp3$/i.test(f)).length : 0;
+const narrationPath = path.join(PROJECT_DIR, 'narration.json');
+if (fs.existsSync(narrationPath)) {
+  let narrationCount = 0;
+  try { narrationCount = JSON.parse(fs.readFileSync(narrationPath, 'utf8')).length; }
+  catch (e) { console.error(`ERROR: narration.json is not valid JSON: ${e.message}`); process.exit(1); }
+  if (narrationCount !== slideCount || narrationCount !== audioCount) {
+    console.error(`ERROR: count mismatch — narration.json=${narrationCount}, slides/*.png=${slideCount}, audio/*.mp3=${audioCount}. All three MUST be equal (SKILL.md step 1.5). Fix before assembling.`);
+    process.exit(1);
+  }
+} else if (audioCount !== slideCount) {
+  console.error(`ERROR: count mismatch — slides/*.png=${slideCount}, audio/*.mp3=${audioCount}. They MUST be equal. Fix before assembling.`);
+  process.exit(1);
+}
+
 console.log(`Project: ${PROJECT_DIR}`);
 console.log(`Slides: ${slideCount} | Padding: ${SLIDE_PADDING}s | Audio bitrate: ${AUDIO_BITRATE}`);
 console.log('---');
@@ -83,7 +103,9 @@ for (let i = 1; i <= slideCount; i++) {
 
 // --- Step 2: Create concat list ---
 const listPath = path.join(TEMP_DIR, 'concat.txt');
-const listContent = clips.map(c => `file '${c.replace(/\\/g, '/')}'`).join('\n');
+// Escape single quotes for the ffmpeg concat demuxer (' → '\'') so paths containing an
+// apostrophe (e.g. "George's") don't produce an unparseable list.
+const listContent = clips.map(c => `file '${c.replace(/\\/g, '/').replace(/'/g, "'\\''")}'`).join('\n');
 fs.writeFileSync(listPath, listContent);
 
 // --- Step 3: Concatenate ---
@@ -105,8 +127,12 @@ console.log(`💾 Size: ${(finalSize / 1024 / 1024).toFixed(1)} MB`);
 try {
   const probeOut = execSync(`"${FFPROBE}" -v error -select_streams a:0 -show_entries stream=bit_rate -of csv=p=0 "${outputPath}"`, { encoding: 'utf8' });
   const audioBps = parseInt(probeOut.trim());
-  if (audioBps && audioBps < 50000) {
-    console.log(`\n⚠️ WARNING: Audio bitrate is only ${Math.round(audioBps / 1000)}kbps — may be silent!`);
+  // ffprobe returns "N/A" (→ NaN) for the exact silent-audio failure this check exists to catch,
+  // so NaN must be treated as a failure, not a pass. SKILL.md 5a: "~2 kbps or N/A = TTS failed."
+  if (!Number.isFinite(audioBps) || audioBps < 50000) {
+    const shown = Number.isFinite(audioBps) ? `${Math.round(audioBps / 1000)}kbps` : 'N/A';
+    console.log(`\n⚠️ WARNING: Audio bitrate is ${shown} — likely silent! Re-check TTS output.`);
+    process.exitCode = 1;
   } else {
     console.log(`🔊 Audio: ${Math.round(audioBps / 1000)}kbps ✅`);
   }

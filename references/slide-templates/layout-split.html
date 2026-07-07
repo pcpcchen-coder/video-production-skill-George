@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<!-- ═══════════════════════════════════════════════════════════════
+ 版型 2／8：左文右圖（split）— 主力版型
+ 用途：一個概念 + 一個圖解。大部分「講解」slide 都該用這張，
+      而不是把整段旁白貼成置中大字。
+ 替換：
+   1. 左欄：標題 + 最多 3 個短點（每點 ≤ 15 字，關鍵詞加 .kw）
+   2. 右欄 .visual：換成「跟旁白講的東西同一件事」的視覺 —
+      inline SVG 圖解／<img src="../screenshots/xxx.png"> 真實截圖／
+      大 emoji 場景。右欄不准放整段文字。
+ 禁忌：左欄超過 3 點就拆成兩張 slide；右欄留白或塞文字都算失敗
+═══════════════════════════════════════════════════════════════ -->
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    width: 1920px; height: 1080px;
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+    color: #ffffff;
+    font-family: 'Noto Sans TC', 'Microsoft JhengHei', 'PingFang TC', 'WenQuanYi Zen Hei', sans-serif;
+    display: flex; align-items: center;
+    padding: 80px 80px 110px;
+    overflow: hidden; position: relative;
+  }
+  .text-col { width: 44%; padding-right: 40px; }
+  .title { font-size: 68px; font-weight: 900; line-height: 1.3; }
+  .rule { width: 180px; height: 8px; background: #e94560; border-radius: 4px; margin: 28px 0 44px; }
+  .point {
+    display: flex; align-items: flex-start; gap: 20px;
+    font-size: 40px; line-height: 1.5; margin-bottom: 34px; color: #e8ecf5;
+  }
+  .point .dot { color: #e94560; font-weight: 900; }
+  .kw { color: #e94560; font-weight: 700; }
+  .visual {
+    width: 56%; display: flex; justify-content: center; align-items: center;
+  }
+  .channel { position: absolute; bottom: 30px; left: 50px; font-size: 24px; opacity: 0.5; }
+  .slide-number { position: absolute; bottom: 30px; right: 50px; font-size: 24px; opacity: 0.5; }
+</style>
+</head>
+<body>
+  <div class="text-col">
+    <div class="title">機器是怎麼<br>猜出字的？</div>
+    <div class="rule"></div>
+    <div class="point"><span class="dot">●</span><span>先把聲音<span class="kw">切成小段</span></span></div>
+    <div class="point"><span class="dot">●</span><span>每一段<span class="kw">猜最像的字</span></span></div>
+    <div class="point"><span class="dot">●</span><span>串起來挑<span class="kw">最通順的一句</span></span></div>
+  </div>
+  <!-- ★ 右欄視覺：畫「旁白正在講的那件事」。範例＝聲音→切段→猜字 圖解 -->
+  <div class="visual">
+    <svg width="880" height="560" viewBox="0 0 880 560" fill="none">
+      <!-- 波形 -->
+      <polyline points="40,280 80,200 120,340 160,180 200,360 240,220 280,300"
+                stroke="#e94560" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+      <text x="90" y="430" font-size="34" fill="#b8c4e0">你的聲音</text>
+      <!-- 箭頭 1 -->
+      <line x1="320" y1="280" x2="390" y2="280" stroke="#b8c4e0" stroke-width="7" stroke-linecap="round"/>
+      <path d="M390 280 l-20 -13 v26 z" fill="#b8c4e0"/>
+      <!-- 切段 -->
+      <g stroke="#ffffff" stroke-width="5">
+        <rect x="420" y="230" width="46" height="100" rx="8"/>
+        <rect x="478" y="230" width="46" height="100" rx="8"/>
+        <rect x="536" y="230" width="46" height="100" rx="8"/>
+      </g>
+      <text x="425" y="430" font-size="34" fill="#b8c4e0">切成小段</text>
+      <!-- 箭頭 2 -->
+      <line x1="620" y1="280" x2="690" y2="280" stroke="#b8c4e0" stroke-width="7" stroke-linecap="round"/>
+      <path d="M690 280 l-20 -13 v26 z" fill="#b8c4e0"/>
+      <!-- 猜出的字 -->
+      <rect x="710" y="205" width="150" height="150" rx="16" stroke="#e94560" stroke-width="6"/>
+      <text x="748" y="312" font-size="80" fill="#ffffff" font-weight="bold">天</text>
+      <text x="710" y="430" font-size="34" fill="#b8c4e0">猜最像的字</text>
+    </svg>
+  </div>
+  <div class="channel">🎬 Your Channel Name</div>
+  <div class="slide-number">3/10</div>
+</body>
+</html>

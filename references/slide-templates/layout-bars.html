@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<!-- ═══════════════════════════════════════════════════════════════
+ 版型 6／8：誠實長條圖（bars）— 純 CSS，不需任何函式庫
+ 用途：只要旁白出現「比較」或「幾個數字的大小」，就用長條圖，不要念數字。
+      呼應 teaching-style §8a：小樣本要用長條圖「視覺顯示差距」，不要用文字
+      假裝跟別人一樣好。
+ 誠實原則（重要）：
+   - 長度一定要照真實比例（bar 寬度 = 數值 / 最大值 × 100%），不要為了好看縮放
+   - 座標從 0 開始，不要截斷讓差距看起來比較小或比較大
+   - 每條 bar 右邊直接標數值，不用另外畫圖例
+ 替換：
+   1. .title 標題（說這是在比什麼）
+   2. 每個 .row：標籤 + 設定 --val（0–100，代表佔最大值的百分比）+ 顯示的數值文字
+   3. 想凸顯自己那條 = 加 class="row me"
+ 顏色：一般 bar 用藍，被凸顯的用品牌紅；兩色在色盲下仍可分辨（已驗證）
+═══════════════════════════════════════════════════════════════ -->
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    width: 1920px; height: 1080px;
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+    color: #ffffff;
+    font-family: 'Noto Sans TC', 'Microsoft JhengHei', 'PingFang TC', 'WenQuanYi Zen Hei', sans-serif;
+    display: flex; flex-direction: column; justify-content: center;
+    padding: 70px 110px 120px;
+    overflow: hidden; position: relative;
+  }
+  .title { font-size: 64px; font-weight: 900; margin-bottom: 16px; }
+  .title::after { content: ''; display: block; width: 200px; height: 8px; background: #e94560; border-radius: 4px; margin-top: 18px; }
+  .chart { margin-top: 44px; }
+  .row { display: flex; align-items: center; margin-bottom: 40px; }
+  .row .label { width: 260px; font-size: 40px; text-align: right; padding-right: 34px; color: #e8ecf5; flex-shrink: 0; }
+  .row.me .label { color: #ffffff; font-weight: 800; }
+  .track { flex: 1; display: flex; align-items: center; }
+  .bar {
+    height: 66px; width: calc(var(--val) * 1%);
+    background: #4a90d9; border-radius: 0 10px 10px 0; min-width: 6px;
+  }
+  .row.me .bar { background: #e94560; }
+  .val { font-size: 44px; font-weight: 800; padding-left: 26px; white-space: nowrap; }
+  .row.me .val { color: #e94560; }
+  .channel { position: absolute; bottom: 30px; left: 50px; font-size: 24px; opacity: 0.5; }
+  .slide-number { position: absolute; bottom: 30px; right: 50px; font-size: 24px; opacity: 0.5; }
+</style>
+</head>
+<body>
+  <div class="title">越吵，聽得越不準</div>
+  <div class="chart">
+    <div class="row">
+      <div class="label">安靜房間</div>
+      <div class="track"><div class="bar" style="--val:95"></div><div class="val">95 分</div></div>
+    </div>
+    <div class="row">
+      <div class="label">馬路邊</div>
+      <div class="track"><div class="bar" style="--val:72"></div><div class="val">72 分</div></div>
+    </div>
+    <div class="row me">
+      <div class="label">吵鬧餐廳</div>
+      <div class="track"><div class="bar" style="--val:48"></div><div class="val">48 分</div></div>
+    </div>
+  </div>
+  <div class="channel">🎬 Your Channel Name</div>
+  <div class="slide-number">6/10</div>
+</body>
+</html>

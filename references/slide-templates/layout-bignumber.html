@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<!-- ═══════════════════════════════════════════════════════════════
+ 版型 3／8：大數字（bignumber）
+ 用途：一張 slide 只講「一個關鍵數字／比例」。旁白提到的每個重要數字，
+      都該用這種放大的形式出現，而不是藏在一句話裡。
+ 替換：
+   1. .kicker 上方一行說「這是什麼數字」
+   2. .number 主角數字（可含單位小字）
+   3. .caption 下方一句話解讀（給觀眾錨點：這個數字算高還低？）
+ 變化：想比較兩三個數字時，複製 .stat 區塊並排（最多 3 個）
+ 禁忌：一張塞超過 3 個數字就改用長條圖版型（layout-bars）
+═══════════════════════════════════════════════════════════════ -->
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    width: 1920px; height: 1080px;
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+    color: #ffffff;
+    font-family: 'Noto Sans TC', 'Microsoft JhengHei', 'PingFang TC', 'WenQuanYi Zen Hei', sans-serif;
+    display: flex; flex-direction: column;
+    justify-content: center; align-items: center;
+    padding: 80px 80px 120px;
+    overflow: hidden; position: relative;
+  }
+  .kicker { font-size: 48px; color: #b8c4e0; margin-bottom: 8px; }
+  .stats { display: flex; gap: 120px; align-items: flex-end; }
+  .stat { display: flex; flex-direction: column; align-items: center; }
+  .number {
+    font-size: 300px; font-weight: 900; line-height: 1; color: #e94560;
+    text-shadow: 2px 2px 8px rgba(0,0,0,0.4);
+  }
+  .number .unit { font-size: 96px; color: #ffffff; }
+  .caption { font-size: 44px; color: #e8ecf5; margin-top: 36px; text-align: center; max-width: 1400px; }
+  .caption .kw { color: #e94560; font-weight: 700; }
+  .channel { position: absolute; bottom: 30px; left: 50px; font-size: 24px; opacity: 0.5; }
+  .slide-number { position: absolute; bottom: 30px; right: 50px; font-size: 24px; opacity: 0.5; }
+</style>
+</head>
+<body>
+  <div class="kicker">辨識準確率</div>
+  <div class="stats">
+    <div class="stat">
+      <div class="number">95<span class="unit">%</span></div>
+    </div>
+  </div>
+  <div class="caption">安靜環境下，機器聽寫幾乎<span class="kw">不會錯</span>；<br>但一吵，準度就掉下來。</div>
+  <div class="channel">🎬 Your Channel Name</div>
+  <div class="slide-number">4/10</div>
+</body>
+</html>
