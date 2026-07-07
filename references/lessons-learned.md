@@ -50,6 +50,23 @@ something looks weird — the odds are good we already hit it.
 ### 8. Empty whitespace in slides
 **What happened:** Content occupied only 60% of the 1920×1080 canvas. Looked unprofessional.
 **Fix:** Don't use `max-width` to constrain containers. Use `padding: 60-80px` and let content fill the space.
+**🔴 But fill it with the VISUAL, not more text** — a bigger diagram, bigger numbers, a bigger
+screenshot. "Fill the canvas" + "fewer, bigger" together must never be read as "add more bullet
+points," or you trade empty space for a text wall (see #23).
+
+### 8b. Text-wall slides (readable but unwatchable)
+**What happened:** Slides that passed every gate — big fonts, filled canvas, characters correct —
+were still just the narration transcribed onto the screen: a title plus a centered paragraph, no
+diagram, no chart, no picture. The eyes had nothing to do while the ears listened. The whole batch
+read as a lecture handout, not a video.
+**Root cause:** the skill enforced typography (font floors, canvas fill) but nothing required a
+*visual*. Every rule was satisfiable by a wall of text.
+**Fix:** the 圖文並茂 law now in SKILL.md Step 2 + `references/visual-design.md` — every slide must
+carry exactly one visual anchor (flow / comparison / bar chart / big number / screenshot / metaphor
+/ timeline), a hard text budget (title + ≤3 short points), and every spoken number/comparison must
+appear as a graphic. Storyboard the picture for each narration entry BEFORE rendering (Step 1.7); if
+you can't name the picture, the entry is an info-dump — rewrite it. Path B ships a layout library
+(`references/slide-templates/`) so "make it visual" has ready templates, not just an instruction.
 
 ### 9. Content pushed to top
 **What happened:** Fixed `padding-top` made content cluster in upper half with blank lower half.

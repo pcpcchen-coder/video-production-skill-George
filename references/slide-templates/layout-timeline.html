@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<!-- ═══════════════════════════════════════════════════════════════
+ 版型 8／8：時間軸（timeline）
+ 用途：講「發展過程」「歷史演進」「一個案例的起源→經過→結局」
+      （呼應 teaching-style §4b：每個案例 起源/機制/結局 至少三段）。
+ 替換：
+   1. .title 標題
+   2. 每個 .node：時間點 + 一個短標題（≤ 10 字）+ 一句小字
+   3. 節點 3–5 個；想強調某個節點加 class="node hot"
+ 禁忌：小字說明別寫成整段；時間點要真實，不要瞎編年份
+═══════════════════════════════════════════════════════════════ -->
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    width: 1920px; height: 1080px;
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+    color: #ffffff;
+    font-family: 'Noto Sans TC', 'Microsoft JhengHei', 'PingFang TC', 'WenQuanYi Zen Hei', sans-serif;
+    display: flex; flex-direction: column; justify-content: center;
+    padding: 70px 90px 120px;
+    overflow: hidden; position: relative;
+  }
+  .title { font-size: 64px; font-weight: 900; margin-bottom: 90px; }
+  .title::after { content: ''; display: block; width: 200px; height: 8px; background: #e94560; border-radius: 4px; margin-top: 18px; }
+  .timeline { position: relative; display: flex; justify-content: space-between; }
+  .timeline::before {
+    content: ''; position: absolute; left: 0; right: 0; top: 26px; height: 6px;
+    background: rgba(255,255,255,0.25); border-radius: 3px;
+  }
+  .node { position: relative; width: 22%; text-align: center; }
+  .node .dot {
+    width: 54px; height: 54px; border-radius: 50%; background: #4a90d9;
+    border: 6px solid #16213e; margin: 0 auto; position: relative; z-index: 1;
+    box-shadow: 0 0 0 4px #4a90d9;
+  }
+  .node.hot .dot { background: #e94560; box-shadow: 0 0 0 4px #e94560; }
+  .node .time { font-size: 44px; font-weight: 800; margin: 28px 0 10px; color: #ffd460; }
+  .node .label { font-size: 40px; font-weight: 700; margin-bottom: 10px; }
+  .node .desc { font-size: 32px; color: #b8c4e0; line-height: 1.4; }
+  .channel { position: absolute; bottom: 30px; left: 50px; font-size: 24px; opacity: 0.5; }
+  .slide-number { position: absolute; bottom: 30px; right: 50px; font-size: 24px; opacity: 0.5; }
+</style>
+</head>
+<body>
+  <div class="title">語音辨識怎麼變準的</div>
+  <div class="timeline">
+    <div class="node">
+      <div class="dot"></div>
+      <div class="time">早期</div>
+      <div class="label">照規則比對</div>
+      <div class="desc">只認得固定字詞</div>
+    </div>
+    <div class="node">
+      <div class="dot"></div>
+      <div class="time">中期</div>
+      <div class="label">用統計猜</div>
+      <div class="desc">開始能聽整句</div>
+    </div>
+    <div class="node hot">
+      <div class="dot"></div>
+      <div class="time">現在</div>
+      <div class="label">深度學習</div>
+      <div class="desc">吵雜也聽得懂</div>
+    </div>
+  </div>
+  <div class="channel">🎬 Your Channel Name</div>
+  <div class="slide-number">8/10</div>
+</body>
+</html>

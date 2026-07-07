@@ -108,6 +108,7 @@ function synthesize(text, outputPath) {
       res.on('end', () => { fs.writeFileSync(outputPath, Buffer.concat(chunks)); resolve(); });
     });
     req.on('error', reject);
+    req.setTimeout(120000, () => req.destroy(new Error('TTS request timed out after 120s')));
     req.write(data);
     req.end();
   });
@@ -145,6 +146,7 @@ async function transcribe(audioPath) {
       });
     });
     req.on('error', reject);
+    req.setTimeout(120000, () => req.destroy(new Error('ASR request timed out after 120s')));
     req.write(body);
     req.end();
   });
@@ -169,22 +171,37 @@ async function processSlide(idx) {
   const text = narration[idx];
   const ttsText = STRIP_PUNCT ? stripPunctForTTS(text) : text;
   const outPath = path.join(audioDir, `slide_${num}.mp3`);
+  const tmpPath = path.join(audioDir, `slide_${num}.attempt.mp3`);
+
+  // Track the BEST attempt (highest similarity), not merely the last one. Whisper false-alarms
+  // on cloned voices mean a later retry can score WORSE than an earlier one — shipping the last
+  // attempt could throw away a good take. See SKILL.md "keep the best attempt".
+  let bestSim = -1;
 
   for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
     console.log(`[${num}/${String(narration.length).padStart(2, '0')}] Attempt ${attempt}/${MAX_RETRIES}...`);
 
     try {
-      await synthesize(ttsText, outPath);
-      const size = fs.statSync(outPath).size;
+      await synthesize(ttsText, tmpPath);
+      const size = fs.statSync(tmpPath).size;
       console.log(`  TTS OK: ${Math.round(size / 1024)} KB`);
 
+      // Provisional fallback: while no attempt has been ASR-scored yet, keep the latest
+      // synthesized (but unverified) audio, so a transient Whisper outage doesn't leave the
+      // slide with no audio at all. A scored attempt below overwrites this.
+      if (bestSim < 0) fs.copyFileSync(tmpPath, outPath);
+
       console.log(`  ASR verifying...`);
-      const transcript = await transcribe(outPath);
+      const transcript = await transcribe(tmpPath);
       const sim = similarity(text, transcript);
       console.log(`  Similarity: ${(sim * 100).toFixed(1)}%`);
 
+      // Promote this attempt to the shipped file whenever it beats the best so far.
+      if (sim > bestSim) { bestSim = sim; fs.copyFileSync(tmpPath, outPath); }
+
       if (sim >= PASS_THRESHOLD) {
         console.log(`  ✅ PASS`);
+        fs.rmSync(tmpPath, { force: true });
         return true;
       } else {
         console.log(`  ❌ FAIL (need ≥${(PASS_THRESHOLD * 100).toFixed(0)}%)`);
@@ -196,7 +213,16 @@ async function processSlide(idx) {
     }
   }
 
-  console.log(`  ⚠️ Keeping best attempt after ${MAX_RETRIES} tries`);
+  fs.rmSync(tmpPath, { force: true });
+  if (bestSim < 0) {
+    if (fs.existsSync(outPath)) {
+      console.log(`  ⚠️ ASR never succeeded (Whisper down?) — kept UNVERIFIED audio for slide ${num}. Re-run to verify.`);
+    } else {
+      console.log(`  ⚠️ All ${MAX_RETRIES} attempts errored — no audio written for slide ${num}`);
+    }
+  } else {
+    console.log(`  ⚠️ Kept best attempt (${(bestSim * 100).toFixed(1)}%) after ${MAX_RETRIES} tries`);
+  }
   return false;
 }
 
@@ -212,5 +238,9 @@ async function processSlide(idx) {
 
   console.log(`\n${'='.repeat(40)}`);
   console.log(`Done! Passed: ${passed}, Failed: ${failed}, Total: ${narration.length}`);
-  if (failed > 0) console.log(`⚠️ ${failed} slide(s) did not meet ASR threshold — see SKILL.md "verify the words, ship on redundancy" before re-rolling forever.`);
+  if (failed > 0) {
+    console.log(`⚠️ ${failed} slide(s) did not meet ASR threshold — see SKILL.md "verify the words, ship on redundancy" before re-rolling forever.`);
+    // Non-zero exit so an orchestrating agent notices instead of assuming success.
+    process.exitCode = 1;
+  }
 })();

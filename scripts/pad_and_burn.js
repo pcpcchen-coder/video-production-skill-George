@@ -38,10 +38,14 @@ else if(mode==='burn'){
   // For full-bleed dark slides (HTML path) use SUB_FS=14-18, SUB_MV=6-12 and a
   // BorderStyle=3 boxed style instead — see SKILL.md Step 6.
   const FS=process.env.SUB_FS||'30', MV=process.env.SUB_MV||'30';
-  const style=`FontName=Microsoft JhengHei,FontSize=${FS},PrimaryColour=&H00202020,OutlineColour=&H00FFFFFF,BorderStyle=1,Outline=1,Shadow=0,MarginV=${MV},Alignment=2`;
+  // FontName override (SUB_FONT) with a CJK-safe default; on Linux/CI without the named font,
+  // libass falls back via fontconfig and can pick a font with no CJK coverage → tofu subtitles.
+  const FONT=process.env.SUB_FONT||'Microsoft JhengHei';
+  const style=`FontName=${FONT},FontSize=${FS},PrimaryColour=&H00202020,OutlineColour=&H00FFFFFF,BorderStyle=1,Outline=1,Shadow=0,MarginV=${MV},Alignment=2`;
   // ffmpeg subtitles filter needs escaped path on Windows
   const srtEsc=srt.replace(/\\/g,'/').replace(/:/g,'\\:');
-  execSync(`"${FFMPEG}" -y -i "${vin}" -vf "subtitles='${srtEsc}':force_style='${style}'" -c:v libx264 -tune stillimage -pix_fmt yuv420p -c:a copy "${vout}"`,{stdio:'pipe'});
+  // +faststart so video_sub.mp4 streams/plays inline too (same lesson as assemble.js).
+  execSync(`"${FFMPEG}" -y -i "${vin}" -vf "subtitles='${srtEsc}':force_style='${style}'" -c:v libx264 -tune stillimage -pix_fmt yuv420p -movflags +faststart -c:a copy "${vout}"`,{stdio:'pipe'});
   const sz=(fs.statSync(vout).size/1024/1024).toFixed(1);
   console.log(`Burned subtitles -> video_sub.mp4 (${sz} MB)`);
 }

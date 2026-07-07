@@ -29,7 +29,7 @@ function splitTokens(text){
   for(const ch of text){
     if('。！？'.includes(ch)){ if(cur.trim())toks.push({t:cur.trim(),strong:true}); cur=''; }
     else if('，；、：—–…\n,;:'.includes(ch)){ if(cur.trim())toks.push({t:cur.trim(),strong:false}); cur=''; }
-    else if('「」『』（）()《》'.includes(ch)){ /* drop quotes/brackets */ }
+    else if('「」『』（）()《》〈〉【】〔〕｛｝{}[]'.includes(ch)){ /* drop quotes/brackets */ }
     else cur+=ch;
   }
   if(cur.trim())toks.push({t:cur.trim(),strong:false});

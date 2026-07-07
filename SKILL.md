@@ -13,11 +13,13 @@ Distilled from producing 40+ real videos for an AI-run YouTube channel (蝦說 A
 ## Quick Start
 
 ```
-0. Read references/teaching-style.md + references/narration-style.md (content quality rules)
+0. Read references/teaching-style.md + references/narration-style.md + references/visual-design.md (quality rules)
 1. Create project directory and cd into it; copy config.json from references/config-example.json and fill it in
 2. Write narration.json (the script — one string per slide)
+2.5 Storyboard: for each narration entry, name the ONE visual it becomes (flow / compare / bar chart / big number / screenshot / metaphor / timeline). Can't name a picture → the entry is an info-dump, rewrite it.
 3. Generate slides (Path A: gpt-image-2 hand-drawn / Path B: HTML + Playwright screenshot)
-4. Visually inspect every slide PNG (wrong characters / clipping / unreadable fonts)
+   — every slide needs one visual anchor; text-only = redo. See references/visual-design.md.
+4. Visually inspect every slide PNG (wrong characters / clipping / unreadable fonts / is it a picture or a text wall?)
 5. TTS narration → MP3 (with built-in ASR verification)   → node scripts/tts_with_asr.js
 6. FFmpeg assemble → video.mp4                            → node scripts/assemble.js
 7. Quality check (bitrate + frame extraction + visual)
@@ -28,9 +30,14 @@ Distilled from producing 40+ real videos for an AI-run YouTube channel (蝦說 A
 
 ## Requirements
 
-- **Node.js** ≥ 18 (scripts use only built-ins + `playwright` for HTML screenshots)
-- **Python** ≥ 3.9 (only for gpt-image-2 slide/cover generation and optional rescore)
+- **Node.js** ≥ 18. Core scripts use only built-ins. Per-path extras:
+  - Path B (HTML slides): `npm i playwright && npx playwright install chromium`
+  - Path C (canvas fallback): `npm i canvas`
+- **Python** ≥ 3.9 (only for gpt-image-2 slide/cover generation; `rescore.py` also needs `pip install pypinyin`)
 - **FFmpeg + FFprobe** on PATH (or set explicit paths in `config.json`)
+- **A Traditional-Chinese font** on the render host. On Windows/macOS you have one already;
+  on Linux/CI install Noto Sans TC (`apt install fonts-noto-cjk`) or Path B screenshots and
+  burned-in subtitles render as tofu (□□□). The template font stacks already list it.
 - **API keys** (environment variables, or a `.env` file in the project directory):
   - `ELEVENLABS_API_KEY` — TTS
   - `OPENAI_API_KEY` — Whisper ASR verification + gpt-image-2 slides/cover
@@ -80,14 +87,18 @@ Create `config.json` in your project directory (start from `references/config-ex
 ## Checklist (mandatory, do not skip steps)
 
 ```
-□ 0. Read references/teaching-style.md — content/teaching rules (pre-flight constitution)
+□ 0. Read references/teaching-style.md + references/visual-design.md — content + visual rules (pre-flight constitution)
 □ 1. Write narration.json
 □ 1.5 ⭐ ALIGNMENT CHECK: narration entries count == slide count. MUST be equal!
      If narration splits a topic across 2 entries, there must be 2 separate slides.
      Mismatch = audio/visual desync for every slide after the mismatch point.
+□ 1.7 ⭐ STORYBOARD: for each narration entry, name the ONE visual it becomes
+     (flow / compare / bar chart / big number / screenshot / metaphor / timeline).
+     Can't name the picture → that entry is an info-dump, rewrite it. See references/visual-design.md.
 □ 2. Generate slides (Path A or B below)
 □ 3. ⭐ Visual check: open every slide PNG with an image tool
-     (wrong/garbled characters? clipped edges? readable on a phone?)
+     (wrong/garbled characters? clipped edges? readable on a phone?
+      ⭐ is this a picture or a text wall? every slide MUST have one visual anchor — text-only = redo that slide)
 □ 4. TTS synthesis + ⭐ ASR verification (similarity ≥ 0.85, never skip)
 □ 5. FFmpeg assemble → video.mp4
 □ 6. ⭐ Quality check: ffprobe audio bitrate + extract a frame + visual verify
@@ -127,7 +138,8 @@ A JSON array of strings, **one per slide** (CRITICAL: array length MUST equal sl
 - **Story > Information.** Viewers remember stories, not bullet lists.
 - Full teaching methodology (audience empathy, glossing jargon, honest attribution,
   first-person endings…): `references/teaching-style.md`. Voice & TTS-safe writing:
-  `references/narration-style.md`.
+  `references/narration-style.md`. How to turn each entry into a picture (not a text
+  wall): `references/visual-design.md`.
 
 ### TTS-friendly writing (important!)
 
@@ -145,14 +157,41 @@ TTS engines mispronounce things. Prevent it at the script stage:
 **Punctuation and pacing:** our TTS script strips punctuation before synthesis (each
 punctuation mark becomes a pause in Chinese TTS — dense commas produce machine-gun
 narration). Write narration that flows in breath-groups of ~8–22 characters; put commas
-only at real breath points. Subtitles still use the original punctuated text.
+only at real breath points. Subtitles use the original narration **wording** (never ASR output);
+gen_subtitles.js strips punctuation and breaks lines at those marks, so the words are the script's
+but the punctuation is not shown.
 
 ---
 
 ## Step 2: Slides
 
-Two first-class paths. Pick ONE per video (Path A is our channel default; Path B has no
-image-API dependency).
+### 🔴 Visual design rules (apply to EVERY path — this is the 圖文並茂 law)
+
+The rest of this skill regulates font sizes and canvas fill. That is not enough: a
+title + a centered wall of 46px text satisfies every typographic rule and is still a
+text wall. These rules exist so slides are **pictures with a few words**, not narration
+transcribed onto a screen. Full rationale + patterns: **`references/visual-design.md`**.
+
+1. **One visual anchor per slide (mandatory).** Every slide must have exactly one
+   non-text visual: a **flow diagram / comparison / bar chart / big-number stat /
+   real screenshot / metaphor illustration / timeline**. If you can't name which one a
+   slide uses, it's a text wall — redo it.
+2. **Text budget.** At most a title + ~3 short points (≤~60 CJK characters of visible
+   body text). The narration carries the sentences; the slide carries the picture. Too
+   much to fit → split into two slides, never shrink the font.
+3. **Every number or comparison spoken in the narration must appear graphically** — a
+   bar, a scale, a before/after, an oversized number — never as a sentence. Honest-chart
+   rules (true proportions, axis from 0, direct labels) live in visual-design.md §4.
+4. **Ban:** a slide that is only 標題 + 條列文字 with no visual element = redo.
+
+This is a 🔴 rule with the same weight as the font-size floor. The Step 3 visual check
+and Step 5d both re-ask "picture or text wall?".
+
+### The three paths
+
+Two first-class paths (A, B) plus an emergency fallback (C). Pick ONE per video (Path A is
+our channel default; Path B has no image-API dependency and is the only path that can embed
+**real screenshots** — required for 「我看了／做了 X」videos, teaching-style §3).
 
 ### Path A — gpt-image-2 hand-drawn teaching style (`scripts/slides_gen.py`)
 
@@ -160,9 +199,18 @@ Full-bleed AI-generated slides in a "professor's hand-drawn lecture notes" style
 white background, bold black CJK title top-left with underline, thin black arrows,
 lots of whitespace, a small mascot in the corner, stick figures only (no real faces).
 
-1. Write one Chinese prompt per slide into `slides_prompts.json` (array of strings).
+1. Write one Chinese prompt per slide into `slides_prompts.json`. Two accepted formats:
+   - Array of full prompt strings: `["<slide 1>", "<slide 2>", ...]`
+   - **Recommended:** `{"style": "<shared style block>", "slides": ["<slide 1>", ...]}` —
+     the style block is written once and prepended to every slide (single source of truth,
+     and the natural home for the visual-composition boilerplate).
    Wrap every string that must appear on the slide in 「」. Always end the shared style
    block with: 「所有中文字必須完全正確、清楚可讀、不可有亂碼或錯字。數字要正確。」
+   🔴 **Every prompt must name a concrete composition** (中央畫一個…流程圖／對比圖／長條圖／
+   時間軸／放大鏡剖面／比喻場景), not just a title + a few quoted lines — otherwise gpt-image-2
+   renders a text card. Fill-in-the-blank prompt skeletons for each diagram type are in
+   **`references/visual-design.md` §7**; `examples/demo/slides_prompts.json` slide 2 is the
+   canonical shape (a flow diagram). A prompt whose only content is 標題+幾行字 is invalid.
 2. `python scripts/slides_gen.py` → generates `slides_raw/slide_NN.png` (1536×1024).
    Batch ≤4–5 concurrent lanes (~120s per image). **Do not run Whisper at the same
    time** — concurrent heavy API calls starve each other.
@@ -175,8 +223,18 @@ lots of whitespace, a small mascot in the corner, stick figures only (no real fa
 
 ### Path B — HTML slides + Playwright screenshot (`scripts/screenshot.js`)
 
-Create one HTML file per slide: `slides/slide_01.html`, `slide_02.html`, …
-(template: `references/slide-template.html`), then `node scripts/screenshot.js`.
+Create one HTML file per slide: `slides/slide_01.html`, `slide_02.html`, …, then
+`node scripts/screenshot.js`.
+
+🔴 **Start from the layout library, not the bare template.** `references/slide-templates/`
+ships 9 ready-to-copy, self-contained 1920×1080 layouts — title, split (text+visual),
+big-number, comparison, flow diagram, honest bar chart, real-screenshot embed, timeline,
+end — each already 圖文並茂, above the font floors, and subtitle-safe. Pick per slide using
+the content-type→layout table in `references/slide-templates/README.md`. The old single
+`references/slide-template.html` is one centered-text layout only — it produces text walls;
+use it just for the shared skeleton (fonts, watermark, slide-number), not as a slide design.
+Inline SVG diagrams, pure-CSS bar charts, and `<img src="../screenshots/…">` all work
+offline under Playwright's `file://` load — no external assets needed.
 
 Design rules (hard-won; mobile viewers are the majority):
 
@@ -189,14 +247,26 @@ Design rules (hard-won; mobile viewers are the majority):
 | Watermark | ≥20px (only element allowed smaller) |
 
 - Resolution = `video.width × video.height` (default 1920×1080).
-- **Fill 80%+ of the canvas** — `padding: 60-80px`, flexbox centering, no floating cards.
-- Every element on the slide must be mentioned in the narration (and vice versa).
+- **Fill 80%+ of the canvas with the VISUAL** — a bigger diagram / bigger numbers /
+  bigger screenshot — `padding: 60-80px`, flexbox centering, no floating cards.
+  🔴 Never fill empty space with more text (that just builds a denser wall).
+- Every **claim or number** on the slide must be covered by the narration and vice versa.
+  A visual anchor that illustrates the narrated concept (diagram boxes, chart axes, metaphor
+  scene) counts as "mentioned" — you don't have to read each label aloud. This rule targets
+  orphan bullet points, not illustrations.
+- **Embedding real screenshots:** save captures to the project's `screenshots/` folder and
+  reference them with a relative `<img src="../screenshots/x.png">` (see the `layout-screenshot`
+  template). Required for 「我看了／做了 X」videos (teaching-style §3) — the one thing Path A can't do.
 - 🔴 Never use <24px body text. Fewer points in bigger font > more points in tiny font.
 
 ### Path C — Node Canvas fallback (`scripts/generate_slides.js`)
 
 No browser, no image API: renders simple title+bullets slides from `slides.json`.
-Use only when Playwright and the image API are both unavailable.
+🔴 **Emergency use only.** Path C is structurally text-only and CANNOT satisfy the
+圖文並茂 rule above — never use it for published channel videos. Use it only when both
+Playwright and the image API are unavailable, and treat the result as a placeholder to
+re-render via Path A/B later. It does support an optional `image` field (embed a local
+PNG/SVG) and a `stat` big-number layout — use those over bullets whenever you can.
 
 ---
 
@@ -258,7 +328,7 @@ Key flags (all already in the script):
 
 ---
 
-## Step 5: Quality Check (three checks, all required)
+## Step 5: Quality Check (four checks, all required)
 
 ### 5a. Audio bitrate
 ```bash
@@ -274,6 +344,12 @@ Compare `verify.png` against `slides/slide_01.png` with an image tool. Content m
 
 ### 5c. Font size check
 Inspect `verify.png`: is every text element readable at mobile size?
+
+### 5d. ⭐ Visual-density check
+On the extracted frames, re-ask the 圖文並茂 question: **is this a picture or a text wall?**
+Every slide must show one visual anchor (diagram / comparison / chart / big number /
+screenshot / metaphor / timeline). A flawlessly rendered wall of text passes 5a–5c but fails
+here — send those slides back to Step 2. See `references/visual-design.md`.
 
 ---
 
@@ -344,9 +420,12 @@ Regardless of method, these rules survived contact with reality:
 my-video-project/
 ├── config.json              ← project config (from references/config-example.json)
 ├── narration.json           ← script text per slide
+├── storyboard.json          ← (optional) the planned visual per slide (Step 1.7)
 ├── slides_prompts.json      ← (Path A) one gpt-image-2 prompt per slide
 ├── slides_raw/              ← (Path A) raw 1536×1024 generations
+├── screenshots/             ← (optional) real captures embedded in slides (teaching-style §3)
 ├── slides/                  ← final 1920×1080 PNGs (padded or screenshotted)
+│   ├── slide_01.html        ← (Path B) HTML source, from references/slide-templates/
 │   ├── slide_01.png
 │   └── ...
 ├── audio/
@@ -363,7 +442,10 @@ my-video-project/
 
 ## Scripts Reference
 
-All scripts take the project directory as an optional first argument (default: CWD).
+All Node scripts take the project directory as an optional first argument (default: CWD).
+The two Python scripts differ: `slides_gen.py` uses `--dir <proj>` (a bare positional arg is
+parsed as a slide number to regenerate); `cover_gen.py` takes the prompt positionally and
+`--dir <proj>` for the project directory.
 
 | Script | Purpose |
 |--------|---------|
@@ -376,6 +458,17 @@ All scripts take the project directory as an optional first argument (default: C
 | `scripts/gen_subtitles.js` | aligned SRT (whisper timing + original text) |
 | `scripts/rescore.py` | homophone/digit-tolerant second-chance ASR scoring |
 | `scripts/cover_gen.py` | gpt-image-2 cover generation |
+
+## Reference docs
+
+| File | What it governs |
+|------|-----------------|
+| `references/teaching-style.md` | 教學法 — how to teach so people understand |
+| `references/narration-style.md` | 旁白語氣 + TTS-safe writing |
+| `references/visual-design.md` | **投影片視覺憲法 — 圖文並茂 rules + Path A prompt patterns** |
+| `references/slide-templates/` | **9 ready-to-copy HTML slide layouts (Path B) + a content-type→layout map** |
+| `references/lessons-learned.md` | the accident-report archive (read before video #1) |
+| `references/heteronyms.json` | 破音字 scan list for TTS |
 
 ---
 
