@@ -186,6 +186,11 @@ async function processSlide(idx) {
       const size = fs.statSync(tmpPath).size;
       console.log(`  TTS OK: ${Math.round(size / 1024)} KB`);
 
+      // Provisional fallback: while no attempt has been ASR-scored yet, keep the latest
+      // synthesized (but unverified) audio, so a transient Whisper outage doesn't leave the
+      // slide with no audio at all. A scored attempt below overwrites this.
+      if (bestSim < 0) fs.copyFileSync(tmpPath, outPath);
+
       console.log(`  ASR verifying...`);
       const transcript = await transcribe(tmpPath);
       const sim = similarity(text, transcript);
@@ -210,7 +215,11 @@ async function processSlide(idx) {
 
   fs.rmSync(tmpPath, { force: true });
   if (bestSim < 0) {
-    console.log(`  ⚠️ All ${MAX_RETRIES} attempts errored — no audio written for slide ${num}`);
+    if (fs.existsSync(outPath)) {
+      console.log(`  ⚠️ ASR never succeeded (Whisper down?) — kept UNVERIFIED audio for slide ${num}. Re-run to verify.`);
+    } else {
+      console.log(`  ⚠️ All ${MAX_RETRIES} attempts errored — no audio written for slide ${num}`);
+    }
   } else {
     console.log(`  ⚠️ Kept best attempt (${(bestSim * 100).toFixed(1)}%) after ${MAX_RETRIES} tries`);
   }
