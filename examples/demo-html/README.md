@@ -22,6 +22,7 @@ To actually produce it (from this directory, keys set):
 
 ```bash
 cp ../../references/config-example.json config.json   # then set tts.voiceId
+node ../../scripts/lint_narration.js                  # 斷句 lint — ERRORs must be zero before TTS
 npm i playwright && npx playwright install chromium    # once, if not already installed
 node ../../scripts/screenshot.js                      # slides/*.html → slides/*.png
 # eyeball every PNG: garbled characters? a picture, or a text wall?

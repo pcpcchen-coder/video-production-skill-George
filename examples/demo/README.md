@@ -13,6 +13,7 @@ To actually produce it (from this directory, keys set):
 
 ```bash
 cp ../../references/config-example.json config.json   # then set tts.voiceId
+node ../../scripts/lint_narration.js                  # 斷句 lint — ERRORs must be zero before TTS
 python ../../scripts/slides_gen.py                    # → slides_raw/slide_01..03.png
 # eyeball every PNG, regenerate any with wrong characters
 node ../../scripts/pad_and_burn.js pad                # → slides/slide_01..03.png
@@ -23,3 +24,6 @@ node ../../scripts/pad_and_burn.js burn               # → video_sub.mp4
 ```
 
 Remember the alignment law: narration entries == slide count (here: 3 == 3).
+
+Note: the lint will WARN that each entry is under 80 Han chars — that's expected here
+(this demo is deliberately mini); real videos should land in 80–150 per slide.
