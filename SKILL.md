@@ -95,6 +95,10 @@ Create `config.json` in your project directory (start from `references/config-ex
 □ 1.7 ⭐ STORYBOARD: for each narration entry, name the ONE visual it becomes
      (flow / compare / bar chart / big number / screenshot / metaphor / timeline).
      Can't name the picture → that entry is an info-dump, rewrite it. See references/visual-design.md.
+□ 1.8 ⭐ PHRASING LINT: node scripts/lint_narration.js — breath-groups ≤16 wide / ≥6 Han,
+     every slide ends with 。！？, no brackets / ASCII .!? / stacked English.
+     ERRORs (exit 1) MUST be zero before TTS — unstable 斷句 traces to here.
+     The law: references/tts-phrasing.md.
 □ 2. Generate slides (Path A or B below)
 □ 3. ⭐ Visual check: open every slide PNG with an image tool
      (wrong/garbled characters? clipped edges? readable on a phone?
@@ -133,6 +137,9 @@ A JSON array of strings, **one per slide** (CRITICAL: array length MUST equal sl
 ### Writing guidelines
 
 - **80–150 characters per slide** (Chinese). Too short = rushed; too long = TTS breaks.
+- **Phrasing/斷句 is a hard, LINTED rule** — breath-groups of 6–16 characters, every
+  slide ends with 。！？. Run `node scripts/lint_narration.js` before TTS (Step 1.8);
+  ERRORs must be zero. Full law: `references/tts-phrasing.md`.
 - **Conversational tone**: metaphors, rhetorical questions, humor.
 - **One concept per slide.** Don't cram.
 - **Story > Information.** Viewers remember stories, not bullet lists.
@@ -150,16 +157,20 @@ TTS engines mispronounce things. Prevent it at the script stage:
 | English abbreviations (LLM, NLP) | Spell out in Chinese, or letters with periods (P.U.A.) |
 | Raw numbers (135,000) | Chinese numerals (十三萬五千) |
 | Version numbers (4.5) | Display text keeps `4.5`, TTS text gets 四點五 |
-| Long sentences (>50 chars) | Split at natural breath points |
+| Long sentences (>40 chars) | Split into 6–16-char breath groups (lint enforces) |
 | Parenthetical content | Rewrite as natural speech |
 | Chinese heteronyms 破音字 (還/重/長/得…) | Scan with references/heteronyms.json, rewrite |
 
-**Punctuation and pacing:** our TTS script strips punctuation before synthesis (each
-punctuation mark becomes a pause in Chinese TTS — dense commas produce machine-gun
-narration). Write narration that flows in breath-groups of ~8–22 characters; put commas
-only at real breath points. Subtitles use the original narration **wording** (never ASR output);
-gen_subtitles.js strips punctuation and breaks lines at those marks, so the words are the script's
-but the punctuation is not shown.
+**Punctuation and pacing:** our TTS script strips every punctuation mark to a space before
+synthesis, so **sentence structure — not punctuation — must carry the phrasing**. Write in
+breath-groups of **6–16 characters** (sweet spot 8–14); never leave a longer run with no
+punctuation, and end every slide with 。！？. Punctuation is only your ruler for measuring
+breath-groups (and the subtitle line-break marker) — dense short commas = machine-gun,
+over-long runs = the model breaks in the wrong place. `node scripts/lint_narration.js`
+counts all of this for you (Step 1.8); the complete rule set with ❌→✅ rewrites is
+**`references/tts-phrasing.md`**. Subtitles use the original narration **wording** (never
+ASR output); gen_subtitles.js strips punctuation and breaks lines at those marks, so the
+words are the script's but the marks are not shown.
 
 ---
 
@@ -285,7 +296,9 @@ then **verifies every clip with Whisper ASR**:
 4. < 0.85 = FAIL → adjust wording and retry (up to `tts.maxRetries`)
 
 **Adjustment rules:** swap synonyms / split long sentences / write numbers in Chinese —
-but never change the meaning, never drop information.
+but never change the meaning, never drop information. **Any rewording MUST re-pass
+`node scripts/lint_narration.js` before re-synthesis** — chasing the ASR score by chopping
+sentences ever finer wrecks the phrasing without making the audio any better.
 
 **Don't chase 0.85 forever — verify the words, ship on redundancy.** Whisper produces
 false alarms on Chinese: same-sound different-tone homophones, digits vs 中文數字,
@@ -453,6 +466,7 @@ parsed as a slide number to regenerate); `cover_gen.py` takes the prompt positio
 | `scripts/pad_and_burn.js` | pad 3:2 images to 16:9 + subtitle band / burn SRT |
 | `scripts/screenshot.js` | Playwright HTML→PNG screenshots |
 | `scripts/generate_slides.js` | Node Canvas fallback slide renderer |
+| `scripts/lint_narration.js` | 斷句/phrasing lint (breath-group length, punctuation, heteronyms, digits, English) — run BEFORE TTS |
 | `scripts/tts_with_asr.js` | ElevenLabs TTS + Whisper ASR verification loop |
 | `scripts/assemble.js` | FFmpeg per-slide clips + concat |
 | `scripts/gen_subtitles.js` | aligned SRT (whisper timing + original text) |
@@ -465,6 +479,7 @@ parsed as a slide number to regenerate); `cover_gen.py` takes the prompt positio
 |------|-----------------|
 | `references/teaching-style.md` | 教學法 — how to teach so people understand |
 | `references/narration-style.md` | 旁白語氣 + TTS-safe writing |
+| `references/tts-phrasing.md` | **斷句硬規則 — breath-group 長度、標點、出稿前 lint（TTS 穩定度的法律）** |
 | `references/visual-design.md` | **投影片視覺憲法 — 圖文並茂 rules + Path A prompt patterns** |
 | `references/slide-templates/` | **9 ready-to-copy HTML slide layouts (Path B) + a content-type→layout map** |
 | `references/lessons-learned.md` | the accident-report archive (read before video #1) |
