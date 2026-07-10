@@ -1,10 +1,21 @@
 {
   "tts": {
     "provider": "elevenlabs",
-    "voiceId": "YOUR_ELEVENLABS_VOICE_ID",
+    "voiceId": "fQj4gJSexpu8RDE2Ii5m",
     "model": "eleven_multilingual_v2",
     "maxRetries": 5,
-    "stripPunctuation": true
+    "stripPunctuation": true,
+    "synthesisMode": "breath_context",
+    "breathSegmentMaxHan": 30,
+    "breathSegmentSilenceSeconds": 0.28,
+    "breathSentenceSilenceSeconds": 0.52,
+    "voiceSettings": {
+      "stability": 0.72,
+      "similarity_boost": 0.84,
+      "style": 0,
+      "use_speaker_boost": true,
+      "speed": 0.95
+    }
   },
   "asr": {
     "provider": "openai",

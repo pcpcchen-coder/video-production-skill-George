@@ -58,9 +58,21 @@ Create `config.json` in your project directory (start from `references/config-ex
 {
   "tts": {
     "provider": "elevenlabs",
-    "voiceId": "YOUR_ELEVENLABS_VOICE_ID",
+    "voiceId": "fQj4gJSexpu8RDE2Ii5m",
     "model": "eleven_multilingual_v2",
-    "maxRetries": 5
+    "maxRetries": 5,
+    "stripPunctuation": true,
+    "synthesisMode": "breath_context",
+    "breathSegmentMaxHan": 30,
+    "breathSegmentSilenceSeconds": 0.28,
+    "breathSentenceSilenceSeconds": 0.52,
+    "voiceSettings": {
+      "stability": 0.72,
+      "similarity_boost": 0.84,
+      "style": 0,
+      "use_speaker_boost": true,
+      "speed": 0.95
+    }
   },
   "asr": {
     "provider": "openai",
@@ -294,6 +306,17 @@ then **verifies every clip with Whisper ASR**:
 2. Compute character-overlap similarity vs the original text
 3. **≥ 0.85 = PASS** (target ≥0.90 for important videos)
 4. < 0.85 = FAIL → adjust wording and retry (up to `tts.maxRetries`)
+
+**Default George voice / phrasing mode:** use ElevenLabs voice ID
+`fQj4gJSexpu8RDE2Ii5m` and `tts.synthesisMode: "breath_context"` unless the human
+explicitly asks to compare voices. This is the selected D method from the phrasing A/B
+test: split each slide into sentence-sized breath segments, synthesize each segment with
+ElevenLabs `previous_text` / `next_text`, then stitch the segments with fixed silence
+(`0.28s` normal, `0.52s` after short bridge sentences). Keep `speed: 0.95`,
+`stability: 0.72`, `similarity_boost: 0.84`, `use_speaker_boost: true`.
+
+Do not hand-roll a separate TTS script for normal production. Use `scripts/tts_with_asr.js`
+so the selected phrasing mode, ASR verification, and "keep best take" behavior stay together.
 
 **Adjustment rules:** swap synonyms / split long sentences / write numbers in Chinese —
 but never change the meaning, never drop information. **Any rewording MUST re-pass
