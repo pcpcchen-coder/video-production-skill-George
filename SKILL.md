@@ -68,6 +68,9 @@ Create `config.json` in your project directory (start from `references/config-ex
     "blueMagpieCfg": 2.0,
     "blueMagpieDevice": "auto",
     "blueMagpieMaxHan": 30,
+    "blueMagpieSeed": 20260712,
+    "blueMagpieInferenceTimesteps": 10,
+    "blueMagpieSingleSegment": false,
     "maxRetries": 5,
     "stripPunctuation": true,
     "synthesisMode": "breath_context",
@@ -337,7 +340,10 @@ For George's local setup, `George_Chen` lives at
 `external/BlueMagpie-TTS/speaker_centroids/George_Chen.pt`; keep that private voice
 centroid out of public repos. Built-in fallback speakers are `hung_yi_lee` and
 `female_voice`; use `blueMagpieCfg: 2.0` as the conservative default. Local mode does
-not require `ELEVENLABS_API_KEY`.
+not require `ELEVENLABS_API_KEY`. Keep `blueMagpieSeed` set for consistent per-segment
+sampling; if the voice drifts between stitched segments, raise `blueMagpieMaxHan` so
+each slide is synthesized in fewer, longer segments, or set `blueMagpieSingleSegment:
+true` to synthesize each slide as one take.
 
 **Adjustment rules:** swap synonyms / split long sentences / write numbers in Chinese —
 but never change the meaning, never drop information. **Any rewording MUST re-pass

@@ -10,6 +10,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import random
 import re
 import subprocess
 import sys
@@ -74,7 +75,10 @@ def pack_units(units: list[str], max_han: int) -> list[str]:
     return packed
 
 
-def split_breath_segments(text: str, max_han: int) -> list[str]:
+def split_breath_segments(text: str, max_han: int, single_segment: bool = False) -> list[str]:
+    if single_segment:
+        return [re.sub(r"\s+", " ", text).strip()]
+
     sentence_delims = set("。！？")
     weak_delims = set("，、；：…—–")
     sentences = split_with_delimiters(text, sentence_delims)
@@ -147,6 +151,17 @@ def load_speaker_centroid(model_dir: Path, bluemagpie_dir: Path, tts_config: dic
     raise ValueError(f"Unknown BlueMagpie speaker {speaker!r}; available: {available}")
 
 
+def seed_everything(seed: int) -> None:
+    import numpy as np
+    import torch
+
+    random.seed(seed)
+    np.random.seed(seed % (2**32))
+    torch.manual_seed(seed)
+    if torch.cuda.is_available():
+        torch.cuda.manual_seed_all(seed)
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="Generate local BlueMagpie narration audio.")
     parser.add_argument("project_dir", nargs="?", default=".", help="Project directory with narration.json")
@@ -197,6 +212,10 @@ def main() -> int:
     speaker = tts_config.get("blueMagpieSpeaker", "George_Chen")
     cfg_value = float(tts_config.get("blueMagpieCfg", 2.0))
     max_han = int(tts_config.get("blueMagpieMaxHan", tts_config.get("breathSegmentMaxHan", 30)))
+    seed = tts_config.get("blueMagpieSeed")
+    seed = None if seed is None else int(seed)
+    inference_timesteps = int(tts_config.get("blueMagpieInferenceTimesteps", 10))
+    single_segment = tts_config.get("blueMagpieSingleSegment", False) is True
     strip_punct = tts_config.get("stripPunctuation", True) is not False
     ffmpeg = config.get("ffmpeg") or os.environ.get("FFMPEG_PATH") or "ffmpeg"
 
@@ -205,7 +224,8 @@ def main() -> int:
     print(f"Project: {project_dir}")
     print(
         f"Slides: {len(narration)} | Provider: BlueMagpie local | "
-        f"Speaker: {speaker} ({speaker_source}) | Device: {device}"
+        f"Speaker: {speaker} ({speaker_source}) | Device: {device} | "
+        f"Seed: {seed if seed is not None else 'random'}"
     )
     print("---")
 
@@ -214,7 +234,7 @@ def main() -> int:
             continue
         num = f"{idx:02d}"
         out_path = audio_dir / f"slide_{num}.mp3"
-        segments = split_breath_segments(text, max_han)
+        segments = split_breath_segments(text, max_han, single_segment=single_segment)
         if not segments:
             raise ValueError(f"Slide {num} has no synthesizable text")
 
@@ -223,7 +243,14 @@ def main() -> int:
         for seg_idx, segment in enumerate(segments, start=1):
             tts_text = clean_tts_text(segment) if strip_punct else segment
             wav_path = tmp_dir / f"slide_{num}_seg_{seg_idx:02d}.wav"
-            audio = model.generate(target_text=tts_text, speaker_centroid=centroid, cfg_value=cfg_value)
+            if seed is not None:
+                seed_everything(seed)
+            audio = model.generate(
+                target_text=tts_text,
+                speaker_centroid=centroid,
+                cfg_value=cfg_value,
+                inference_timesteps=inference_timesteps,
+            )
             sf.write(wav_path, audio.squeeze().cpu().numpy(), model.sample_rate)
             part_paths.append(wav_path)
 
