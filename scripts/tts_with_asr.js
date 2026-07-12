@@ -1,18 +1,20 @@
 /**
  * TTS + ASR Verification Script
  *
- * Reads narration.json from the project directory, synthesizes each entry
- * via ElevenLabs TTS, and verifies with OpenAI Whisper ASR.
+ * Reads narration.json from the project directory, synthesizes each entry,
+ * and writes audio/slide_XX.mp3.
  *
  * Usage: node tts_with_asr.js [project_dir]
  *   - project_dir: directory containing narration.json (default: CWD)
  *
  * Environment variables (or a .env file in the project directory):
- *   ELEVENLABS_API_KEY — ElevenLabs API key
- *   OPENAI_API_KEY     — OpenAI API key (for Whisper)
+ *   ELEVENLABS_API_KEY — ElevenLabs API key (cloud TTS)
+ *   OPENAI_API_KEY     — OpenAI API key (for Whisper verification)
+ *   BLUEMAGPIE_TTS_DIR — optional path to local BlueMagpie-TTS checkout
+ *   BLUEMAGPIE_PYTHON  — optional Python executable for local BlueMagpie
  *
  * config.json in project_dir (required for voiceId):
- *   { "tts": { "voiceId": "...", "model": "...", "maxRetries": 5,
+ *   { "tts": { "provider": "elevenlabs", "voiceId": "...", "model": "...", "maxRetries": 5,
  *              "stripPunctuation": true, "synthesisMode": "breath_context" },
  *     "asr": { "passThreshold": 0.85, "language": "zh" } }
  */
@@ -37,6 +39,14 @@ try {
 // --- Load config ---
 const CONFIG_PATH = path.join(PROJECT_DIR, 'config.json');
 const config = fs.existsSync(CONFIG_PATH) ? JSON.parse(fs.readFileSync(CONFIG_PATH, 'utf8')) : {};
+
+const TTS_PROVIDER = String(config.tts?.provider || 'elevenlabs').toLowerCase();
+if (['bluemagpie', 'blue_magpie', 'local'].includes(TTS_PROVIDER)) {
+  const python = config.tts?.blueMagpiePython || process.env.BLUEMAGPIE_PYTHON || 'python3';
+  const script = config.tts?.blueMagpieScript || path.join(__dirname, 'tts_bluemagpie_local.py');
+  execFileSync(python, [script, PROJECT_DIR], { stdio: 'inherit' });
+  process.exit(0);
+}
 
 const VOICE_ID = config.tts?.voiceId || process.env.TTS_VOICE_ID;
 const MODEL_ID = config.tts?.model || 'eleven_multilingual_v2';

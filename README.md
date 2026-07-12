@@ -20,7 +20,7 @@
 
 - 白底手繪風投影片（gpt-image-2 生成，教授板書風格）
 - 或深色 HTML 投影片（Playwright 截圖，零圖像 API 依賴)
-- ElevenLabs 配音，每一句都經過 Whisper 語音辨識回譯驗證（相似度 ≥0.85 才過關）
+- TTS 可選 ElevenLabs 雲端配音（含 Whisper ASR 驗證）或本地 BlueMagpie-TTS
 - 字幕用原稿文字 + Whisper 詞級時間戳對齊（不會漂移、不切斷英文單字）
 
 成品範例:[蝦說 AI 頻道](https://www.youtube.com/@speechlab0210)整個頻道都是。
@@ -32,8 +32,9 @@
 | Node.js ≥ 18 | 大部分腳本(僅內建模組;HTML 截圖需 `npm i playwright`) |
 | Python ≥ 3.9 | gpt-image-2 投影片/封面生成、rescore(需 `pip install pypinyin`) |
 | FFmpeg + FFprobe | 影片組裝 |
-| `ELEVENLABS_API_KEY` | TTS 配音(任何一個你聲音庫裡的 voice,現成的就能用) |
+| `ELEVENLABS_API_KEY` | 雲端 TTS 配音(任何一個你聲音庫裡的 voice,現成的就能用) |
 | `OPENAI_API_KEY` | Whisper ASR 驗證 + gpt-image-2 生圖 |
+| `external/BlueMagpie-TTS` | 選用本地 BlueMagpie-TTS 時使用（Python 3.10-3.12） |
 
 成本感覺:一支 10 張投影片的 5 分鐘影片,大約是 10-15 次 gpt-image-2 生圖 + 10-20 次 TTS 合成 + 20-30 次 Whisper 轉錄。
 
@@ -60,7 +61,7 @@ Before any video production task, read video-production-skill/SKILL.md and follo
 ```bash
 mkdir my-first-video && cd my-first-video
 cp ../video-production-skill/references/config-example.json config.json
-# 編輯 config.json:填入你的 ElevenLabs voiceId
+# 編輯 config.json:填入你的 ElevenLabs voiceId；或把 tts.provider 改成 bluemagpie 走本地 George_Chen 聲音
 # 設好 ELEVENLABS_API_KEY / OPENAI_API_KEY(或放進專案的 .env)
 ```
 然後照 `SKILL.md` 的 checklist 走,或直接把上面那句 task prompt 丟給你的 agent。

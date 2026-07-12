@@ -39,10 +39,13 @@ Distilled from producing 40+ real videos for an AI-run YouTube channel (蝦說 A
   on Linux/CI install Noto Sans TC (`apt install fonts-noto-cjk`) or Path B screenshots and
   burned-in subtitles render as tofu (□□□). The template font stacks already list it.
 - **API keys** (environment variables, or a `.env` file in the project directory):
-  - `ELEVENLABS_API_KEY` — TTS
+  - `ELEVENLABS_API_KEY` — cloud TTS when `tts.provider: "elevenlabs"`
   - `OPENAI_API_KEY` — Whisper ASR verification + gpt-image-2 slides/cover
 - A **TTS voice**: set `tts.voiceId` in `config.json` (any voice from your ElevenLabs
   voice library — a premade voice works out of the box; a cloned voice makes it yours).
+- **Optional local TTS**: install BlueMagpie-TTS (Python 3.10-3.12) under
+  `external/BlueMagpie-TTS` (or set `BLUEMAGPIE_TTS_DIR`) and set
+  `tts.provider: "bluemagpie"` to synthesize audio locally.
 
 > ⚠️ Never hardcode API keys in scripts and never commit them to git. One of our keys
 > was auto-revoked from a public repo push and 32 videos rendered silent. Environment
@@ -60,6 +63,11 @@ Create `config.json` in your project directory (start from `references/config-ex
     "provider": "elevenlabs",
     "voiceId": "fQj4gJSexpu8RDE2Ii5m",
     "model": "eleven_multilingual_v2",
+    "blueMagpieSpeaker": "George_Chen",
+    "blueMagpieSpeakerDir": "speaker_centroids",
+    "blueMagpieCfg": 2.0,
+    "blueMagpieDevice": "auto",
+    "blueMagpieMaxHan": 30,
     "maxRetries": 5,
     "stripPunctuation": true,
     "synthesisMode": "breath_context",
@@ -299,8 +307,10 @@ PNG/SVG) and a `stat` big-number layout — use those over bullets whenever you 
 node scripts/tts_with_asr.js [project_dir]
 ```
 
-Reads `narration.json`, synthesizes each entry via ElevenLabs, saves `audio/slide_XX.mp3`,
-then **verifies every clip with Whisper ASR**:
+Reads `narration.json` and saves `audio/slide_XX.mp3`.
+
+With `tts.provider: "elevenlabs"`, it synthesizes each entry via ElevenLabs, then
+**verifies every clip with Whisper ASR**:
 
 1. Transcribe the generated audio
 2. Compute character-overlap similarity vs the original text
@@ -317,6 +327,17 @@ ElevenLabs `previous_text` / `next_text`, then stitch the segments with fixed si
 
 Do not hand-roll a separate TTS script for normal production. Use `scripts/tts_with_asr.js`
 so the selected phrasing mode, ASR verification, and "keep best take" behavior stay together.
+
+**Local BlueMagpie mode:** set `tts.provider: "bluemagpie"` (or `"local"`) to route the
+same command through `scripts/tts_bluemagpie_local.py`. The bridge loads the local
+BlueMagpie checkout from `../../external/BlueMagpie-TTS` by default, uses one fixed
+speaker centroid for the whole video (`tts.blueMagpieSpeaker`, default `George_Chen`),
+splits text into breath-sized chunks, and exports 44.1 kHz mono MP3 files for assembly.
+For George's local setup, `George_Chen` lives at
+`external/BlueMagpie-TTS/speaker_centroids/George_Chen.pt`; keep that private voice
+centroid out of public repos. Built-in fallback speakers are `hung_yi_lee` and
+`female_voice`; use `blueMagpieCfg: 2.0` as the conservative default. Local mode does
+not require `ELEVENLABS_API_KEY`.
 
 **Adjustment rules:** swap synonyms / split long sentences / write numbers in Chinese —
 but never change the meaning, never drop information. **Any rewording MUST re-pass
@@ -490,7 +511,8 @@ parsed as a slide number to regenerate); `cover_gen.py` takes the prompt positio
 | `scripts/screenshot.js` | Playwright HTML→PNG screenshots |
 | `scripts/generate_slides.js` | Node Canvas fallback slide renderer |
 | `scripts/lint_narration.js` | 斷句/phrasing lint (breath-group length, punctuation, heteronyms, digits, English) — run BEFORE TTS |
-| `scripts/tts_with_asr.js` | ElevenLabs TTS + Whisper ASR verification loop |
+| `scripts/tts_with_asr.js` | TTS entry point: ElevenLabs cloud + Whisper ASR, or local BlueMagpie dispatch |
+| `scripts/tts_bluemagpie_local.py` | Local BlueMagpie-TTS bridge that writes audio/slide_XX.mp3 |
 | `scripts/assemble.js` | FFmpeg per-slide clips + concat |
 | `scripts/gen_subtitles.js` | aligned SRT (whisper timing + original text) |
 | `scripts/rescore.py` | homophone/digit-tolerant second-chance ASR scoring |
