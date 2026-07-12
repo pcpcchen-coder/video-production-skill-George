@@ -5,6 +5,8 @@
     "model": "eleven_multilingual_v2",
     "blueMagpieSpeaker": "George_Chen",
     "blueMagpieSpeakerDir": "speaker_centroids",
+    "blueMagpieReferenceWav": "",
+    "blueMagpieUseSpeakerWithReference": false,
     "blueMagpieCfg": 2.0,
     "blueMagpieDevice": "auto",
     "blueMagpieMaxHan": 30,

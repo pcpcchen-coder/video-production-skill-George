@@ -65,6 +65,8 @@ Create `config.json` in your project directory (start from `references/config-ex
     "model": "eleven_multilingual_v2",
     "blueMagpieSpeaker": "George_Chen",
     "blueMagpieSpeakerDir": "speaker_centroids",
+    "blueMagpieReferenceWav": "",
+    "blueMagpieUseSpeakerWithReference": false,
     "blueMagpieCfg": 2.0,
     "blueMagpieDevice": "auto",
     "blueMagpieMaxHan": 30,
@@ -333,17 +335,27 @@ so the selected phrasing mode, ASR verification, and "keep best take" behavior s
 
 **Local BlueMagpie mode:** set `tts.provider: "bluemagpie"` (or `"local"`) to route the
 same command through `scripts/tts_bluemagpie_local.py`. The bridge loads the local
-BlueMagpie checkout from `../../external/BlueMagpie-TTS` by default, uses one fixed
-speaker centroid for the whole video (`tts.blueMagpieSpeaker`, default `George_Chen`),
-splits text into breath-sized chunks, and exports 44.1 kHz mono MP3 files for assembly.
-For George's local setup, `George_Chen` lives at
-`external/BlueMagpie-TTS/speaker_centroids/George_Chen.pt`; keep that private voice
-centroid out of public repos. Built-in fallback speakers are `hung_yi_lee` and
-`female_voice`; use `blueMagpieCfg: 2.0` as the conservative default. Local mode does
-not require `ELEVENLABS_API_KEY`. Keep `blueMagpieSeed` set for consistent per-segment
-sampling; if the voice drifts between stitched segments, raise `blueMagpieMaxHan` so
-each slide is synthesized in fewer, longer segments, or set `blueMagpieSingleSegment:
-true` to synthesize each slide as one take.
+BlueMagpie checkout from `../../external/BlueMagpie-TTS` by default and exports 44.1
+kHz mono MP3 files for assembly.
+
+There are two local voice-conditioning paths:
+
+- `blueMagpieSpeaker`: use one fixed speaker centroid for the whole video. For George's
+  local setup, `George_Chen` lives at
+  `external/BlueMagpie-TTS/speaker_centroids/George_Chen.pt`; keep that private voice
+  centroid out of public repos. Built-in fallback speakers are `hung_yi_lee` and
+  `female_voice`. Use `blueMagpieCfg: 2.0` as the conservative default.
+- `blueMagpieReferenceWav`: use a clean reference WAV directly. This is useful when the
+  centroid clone drifts or alternates timbre. For George's current best local voice,
+  use the cleaned reference clip from the private workspace tests with `blueMagpieCfg:
+  2.4`, `blueMagpieInferenceTimesteps: 20`, `blueMagpieSingleSegment: true`, and
+  `blueMagpieMaxHan: 999`. Leave `blueMagpieUseSpeakerWithReference: false` unless you
+  intentionally want to combine a centroid with the reference clip.
+
+Local mode does not require `ELEVENLABS_API_KEY`. Keep `blueMagpieSeed` set for
+consistent sampling; if the voice drifts between stitched segments, raise
+`blueMagpieMaxHan` so each slide is synthesized in fewer, longer segments, or set
+`blueMagpieSingleSegment: true` to synthesize each slide as one take.
 
 **Adjustment rules:** swap synonyms / split long sentences / write numbers in Chinese —
 but never change the meaning, never drop information. **Any rewording MUST re-pass

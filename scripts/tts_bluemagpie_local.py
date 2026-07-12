@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Local BlueMagpie-TTS bridge for slide narration projects.
 
-Reads project config.json + narration.json, synthesizes each narration entry with a
-single BlueMagpie speaker centroid, and writes audio/slide_XX.mp3 files.
+Reads project config.json + narration.json, synthesizes each narration entry with
+BlueMagpie speaker conditioning, and writes audio/slide_XX.mp3 files.
 """
 
 from __future__ import annotations
@@ -32,6 +32,15 @@ def load_json(path: Path, default):
     if not path.exists():
         return default
     return json.loads(path.read_text(encoding="utf-8"))
+
+
+def resolve_project_path(project_dir: Path, value: str | None) -> Path | None:
+    if not value:
+        return None
+    path = Path(value).expanduser()
+    if path.is_absolute():
+        return path
+    return (project_dir / path).resolve()
 
 
 def han_len(text: str) -> int:
@@ -210,21 +219,31 @@ def main() -> int:
 
     model = BlueMagpieModel.from_local(str(model_dir), tokenizer=tokenizer, training=False, device=device)
     speaker = tts_config.get("blueMagpieSpeaker", "George_Chen")
+    reference_wav = resolve_project_path(project_dir, tts_config.get("blueMagpieReferenceWav"))
+    use_speaker_with_reference = tts_config.get("blueMagpieUseSpeakerWithReference", False) is True
     cfg_value = float(tts_config.get("blueMagpieCfg", 2.0))
     max_han = int(tts_config.get("blueMagpieMaxHan", tts_config.get("breathSegmentMaxHan", 30)))
     seed = tts_config.get("blueMagpieSeed")
     seed = None if seed is None else int(seed)
     inference_timesteps = int(tts_config.get("blueMagpieInferenceTimesteps", 10))
+    retry_badcase = tts_config.get("blueMagpieRetryBadcase", True) is not False
     single_segment = tts_config.get("blueMagpieSingleSegment", False) is True
     strip_punct = tts_config.get("stripPunctuation", True) is not False
     ffmpeg = config.get("ffmpeg") or os.environ.get("FFMPEG_PATH") or "ffmpeg"
 
-    centroid, speaker_source = load_speaker_centroid(model_dir, bluemagpie_dir, tts_config, speaker)
+    centroid = None
+    speaker_source = "none"
+    if not reference_wav or use_speaker_with_reference:
+        centroid, speaker_source = load_speaker_centroid(model_dir, bluemagpie_dir, tts_config, speaker)
+
+    if reference_wav and not reference_wav.exists():
+        raise FileNotFoundError(f"BlueMagpie reference wav not found: {reference_wav}")
 
     print(f"Project: {project_dir}")
     print(
         f"Slides: {len(narration)} | Provider: BlueMagpie local | "
         f"Speaker: {speaker} ({speaker_source}) | Device: {device} | "
+        f"Reference: {reference_wav if reference_wav else 'none'} | "
         f"Seed: {seed if seed is not None else 'random'}"
     )
     print("---")
@@ -248,8 +267,10 @@ def main() -> int:
             audio = model.generate(
                 target_text=tts_text,
                 speaker_centroid=centroid,
+                reference_wav_path=str(reference_wav) if reference_wav else "",
                 cfg_value=cfg_value,
                 inference_timesteps=inference_timesteps,
+                retry_badcase=retry_badcase,
             )
             sf.write(wav_path, audio.squeeze().cpu().numpy(), model.sample_rate)
             part_paths.append(wav_path)
